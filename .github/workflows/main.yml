@@ -1,0 +1,63 @@
+name: Build deb
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove leftovers of the old version (Settings pane)
+        run: rm -rf layout
+
+      - name: Install Theos and tools
+        run: |
+          brew install ldid xz make dpkg
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos"
+          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+
+      - name: Build ROOTFUL (iphoneos-arm)
+        run: |
+          rm -rf packages .theos obj
+          make package FINALPACKAGE=1
+          mkdir -p out
+          cp packages/*.deb out/Icons18_ROOTFUL_iphoneos-arm.deb
+
+      - name: Build ROOTLESS (iphoneos-arm64)
+        run: |
+          rm -rf packages .theos obj
+          make package FINALPACKAGE=1 ROOTLESS=1
+          cp packages/*.deb out/Icons18_ROOTLESS_iphoneos-arm64.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: icons18-deb
+          path: out/*.deb
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Icons18 build ${{ github.run_number }} (iOS 15.0 – 15.8.x)
+          body: |
+            ## Icons18 — iOS 18-style icons for iOS 15
+
+            **Supported iOS: 15.0 – 15.8.x (including 15.8.8).** Not for iOS 14 or iOS 16+. Architecture: arm64 (A9 and newer, e.g. iPhone 6s).
+
+            | File | Jailbreak type | Package arch |
+            |---|---|---|
+            | `Icons18_ROOTFUL_iphoneos-arm.deb` | **ROOTFUL** (no `/var/jb` folder: checkra1n, unc0ver, Taurine, palera1n rootful) | iphoneos-arm |
+            | `Icons18_ROOTLESS_iphoneos-arm64.deb` | **ROOTLESS** (`/var/jb` exists: palera1n rootless, Dopamine) | iphoneos-arm64 |
+
+            Use: long-press home screen → **+** → **Customize** → Default / Dark / Auto / Tinted, Small / Large icons.
+          files: |
+            out/Icons18_ROOTFUL_iphoneos-arm.deb
+            out/Icons18_ROOTLESS_iphoneos-arm64.deb
