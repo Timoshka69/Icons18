@@ -1,0 +1,9 @@
+Package: com.local.icons18
+Name: Icons18
+Version: 0.3.0
+Architecture: iphoneos-arm
+Description: iOS 18 style Default / Dark / Auto / Tinted icons, widgets and Settings icons, Small/Large icons for iOS 15 (Customize via the + button)
+Maintainer: me
+Author: me
+Section: Tweaks
+Depends: mobilesubstrate, firmware (>= 15.0), firmware (<< 16.0)
